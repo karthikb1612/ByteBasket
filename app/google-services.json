@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1093395924284",
+    "project_id": "bytebasket-c4365",
+    "storage_bucket": "bytebasket-c4365.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1093395924284:android:795839cb9e4f4b03b54a39",
+        "android_client_info": {
+          "package_name": "com.example.bytebasket"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqjfe774xSft-IB0_b15ZQSlpkS9DTW_c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
