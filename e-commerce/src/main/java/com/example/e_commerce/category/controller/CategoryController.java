@@ -9,9 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.io.IOException;
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/category")
@@ -21,7 +21,9 @@ public class CategoryController {
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Category>> getDetails(){
-        return new ResponseEntity<>(categoryService.GetDetails(), HttpStatus.OK);
+
+//       CategoryResponse categoryResponse=categoryService.GetDetails();
+        return new ResponseEntity<>(categoryService.GetDetails(),HttpStatus.OK);
     }
 
     @PostMapping(value = "/post", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

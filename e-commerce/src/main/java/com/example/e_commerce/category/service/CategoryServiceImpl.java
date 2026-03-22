@@ -2,6 +2,7 @@ package com.example.e_commerce.category.service;
 
 import com.example.e_commerce.category.entity.Category;
 import com.example.e_commerce.category.repository.CategoryRepo;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<Category> GetDetails() {
-        return categoryRepo.findAll();
+
+        List<Category> categories= categoryRepo.findAll();
+        return categories;
     }
 
     @Override

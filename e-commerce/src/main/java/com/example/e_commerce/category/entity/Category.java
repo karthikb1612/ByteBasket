@@ -19,3 +19,4 @@ public class Category {
     @Lob
     private byte[] imageData;
 }
+
