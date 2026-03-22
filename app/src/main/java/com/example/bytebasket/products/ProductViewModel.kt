@@ -3,6 +3,7 @@ package com.example.bytebasket.products
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bytebasket.category.convertUriToFile
@@ -12,8 +13,11 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import androidx.compose.runtime.State
 
 class ProductViewModel : ViewModel() {
+    private val _searchResults = mutableStateOf<List<Products>>(emptyList())
+    val searchResults: State<List<Products>> = _searchResults
     fun addProducts(context: Context, products: Products, imageUri: Uri) {
         viewModelScope.launch {
             val detailsJson = Gson().toJson(products)
@@ -34,4 +38,28 @@ class ProductViewModel : ViewModel() {
             }
         }
     }
+    fun getProductsBySearchKeyWord(context: Context, keyword: String) {
+        viewModelScope.launch {
+            if (keyword.isBlank()) {
+                _searchResults.value = emptyList()
+                return@launch
+            }
+
+            try {
+                val response = ProductRetrofitInstance.api.getProductBySearch(keyword)
+                if (response.isSuccessful && response.body() != null) {
+                    _searchResults.value = response.body()!! // ✅ FIXED LINE
+                    Log.d("Search", "Found: ${response.body()?.size} products")
+                } else {
+                    Log.e("Search", "Error: ${response.errorBody()?.string()}")
+                    _searchResults.value = emptyList()
+                }
+            } catch (e: Exception) {
+                Log.e("Search", "Exception: ${e.localizedMessage}")
+                _searchResults.value = emptyList()
+            }
+        }
+    }
+
+
 }

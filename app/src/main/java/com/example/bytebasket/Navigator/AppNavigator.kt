@@ -14,6 +14,7 @@ import com.example.bytebasket.category.AddCategoryForm
 import com.example.bytebasket.category.CategoryViewModel
 import com.example.bytebasket.pages.Cart
 import com.example.bytebasket.pages.CategoryProducts
+import com.example.bytebasket.pages.CheckOut
 import com.example.bytebasket.pages.Favorite
 import com.example.bytebasket.pages.ProductDetailPage
 import com.example.bytebasket.products.AddProducts
@@ -67,7 +68,7 @@ fun AppNavigator(
             enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
             exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() }
         ) {
-            HomeScreen(modifier,navController,authViewModel)
+            HomeScreen(modifier,navController,authViewModel,productViewModel)
         }
         composable(
             "Cart",
@@ -96,7 +97,7 @@ fun AppNavigator(
             exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() }
         ) {
             var categoryId=it.arguments?.getString("categoryId")
-            CategoryProducts(modifier,categoryId?:"")
+            CategoryProducts(modifier,categoryId?:"",productViewModel)
         }
 
         composable(
@@ -113,6 +114,14 @@ fun AppNavigator(
         ) {
             var productId=it.arguments?.getString("productId")
             ProductDetailPage(modifier,productId?:"")
+        }
+
+        composable(
+            "checkout",
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() }
+        ) {
+            CheckOut(modifier,navController,productViewModel)
         }
     }
 }

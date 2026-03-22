@@ -31,11 +31,11 @@ fun Header(modifier: Modifier = Modifier) {
     }
     Column {
         val greeting = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-            in 5..11 -> "Good morning, $name! ☀️"
-            in 12..16 -> "Good afternoon, $name! 🛒"
-            in 17..21 -> "Good evening, $name! ✨"
-            else -> "Late-night browsing, $name? 🌙"
-        }
+        in 5..11 -> "Good Morning, $name ☀️"
+        in 12..16 -> "Good Afternoon, $name 🌿"
+        in 17..21 -> "Good Evening, $name ✨"
+        else -> "Hello, $name 🌙"
+    }
 
         Text(
             text = greeting,

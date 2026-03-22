@@ -26,21 +26,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.bytebasket.pages.Cart
 import com.example.bytebasket.pages.Favorite
 import com.example.bytebasket.pages.Home
 import com.example.bytebasket.pages.Profile
+import com.example.bytebasket.products.ProductViewModel
 import com.example.bytebasket.viewmodel.AuthViewModel
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    productViewModel: ProductViewModel
 ) {
     val navItemList=listOf(
         NavItem("Home", Icons.Default.Home),
@@ -49,7 +53,7 @@ fun HomeScreen(
         NavItem("Profile", Icons.Default.Person)
 
     )
-    var selector by remember { mutableStateOf(0) }
+    var selector by rememberSaveable { mutableStateOf(0) }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -67,7 +71,7 @@ fun HomeScreen(
             }
         }
     ) {
-        ContentScreen(modifier = modifier.padding(it),selector,navController,authViewModel)
+        ContentScreen(modifier = Modifier.padding(it),selector,navController,authViewModel,productViewModel)
     }
 }
 @Composable
@@ -75,7 +79,8 @@ fun ContentScreen(
     modifier: Modifier,
     selector: Int,
     navController: NavHostController,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    productViewModel: ProductViewModel
 ) {
     AnimatedContent(
         targetState = selector,
@@ -88,7 +93,7 @@ fun ContentScreen(
         modifier = modifier
     ) { ts ->
         when (ts) {
-            0 -> Home(modifier, navController, authViewModel)
+            0 -> Home(modifier, navController, authViewModel,productViewModel)
             1 -> Favorite(modifier, navController, authViewModel)
             2 -> Cart(modifier, navController, authViewModel)
             3 -> Profile(modifier, navController,authViewModel)
