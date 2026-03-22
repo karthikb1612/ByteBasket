@@ -2,6 +2,7 @@ package com.example.bytebasket.pages
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,10 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -66,51 +70,97 @@ fun Cart(
     val context = LocalContext.current
     var cartItems by remember { mutableStateOf<List<Pair<Products, Long>>>(emptyList()) }
     var userModel by remember { mutableStateOf(UserModel()) }
+
+    // Load user + cart data
     LaunchedEffect(Unit) {
-        Firebase.firestore.collection("user").
-        document(FirebaseAuth.getInstance().currentUser?.uid!!).get().
-                addOnCompleteListener{
-                    if(it.isSuccessful){
-                        val result= it.result.toObject(UserModel::class.java)
-                        if(result!=null){
-                            userModel=result;
-
-                            CoroutineScope(Dispatchers.IO).launch {
-                                val tempList = mutableListOf<Pair<Products, Long>>()
-
-                                for ((productId, quantity) in result.cartItems) {
-                                    try {
-                                        val productResponse = ProductRetrofitInstance.api
-                                            .getAllProductsById(productId.toLong())
-
-                                        productResponse.body()?.let { product ->
-                                            tempList.add(product to quantity)
-                                        }
-                                    } catch (e: Exception) {
-                                        e.message
+        Firebase.firestore.collection("user")
+            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
+            .get().addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val result = it.result.toObject(UserModel::class.java)
+                    if (result != null) {
+                        userModel = result
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val tempList = mutableListOf<Pair<Products, Long>>()
+                            for ((productId, quantity) in result.cartItems) {
+                                try {
+                                    val productResponse = ProductRetrofitInstance.api
+                                        .getAllProductsById(productId.toLong())
+                                    productResponse.body()?.let { product ->
+                                        tempList.add(product to quantity)
                                     }
-                                }
-                                withContext(Dispatchers.Main) {
-                                    cartItems = tempList
-                                }
+                                } catch (_: Exception) {}
+                            }
+                            withContext(Dispatchers.Main) {
+                                cartItems = tempList
                             }
                         }
                     }
                 }
+            }
     }
-    LazyColumn(modifier = Modifier.padding(16.dp)) {
-        items(cartItems) { (product, quantity) ->
-            CartItemView(product, quantity) { productId, newQuantity ->
-                val updatedCartItems = cartItems.toMutableList()
-                val index = updatedCartItems.indexOfFirst { it.first.id == productId.toLong() }
-                if (index != -1) {
-                    if (newQuantity <= 0) {
-                        updatedCartItems.removeAt(index)
-                    }else{
-                        updatedCartItems[index] = updatedCartItems[index].copy(second = newQuantity.toLong())
+
+    val totalPrice = cartItems.sumOf { (product, qty) ->
+        (product.price?.toInt() ?: 0) * qty
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Header
+        Text(
+            text = "🛒 Your Cart (${cartItems.size} items)",
+            modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 8.dp),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Serif,
+            color = Color(0xFF3A0146)
+        )
+
+        // Cart items
+        LazyColumn(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .weight(1f)
+        ) {
+            items(cartItems) { (product, quantity) ->
+                CartItemView(product, quantity) { productId, newQuantity ->
+                    val updatedCartItems = cartItems.toMutableList()
+                    val index = updatedCartItems.indexOfFirst { it.first.id == productId.toLong() }
+                    if (index != -1) {
+                        if (newQuantity <= 0) {
+                            updatedCartItems.removeAt(index)
+                        } else {
+                            updatedCartItems[index] =
+                                updatedCartItems[index].copy(second = newQuantity.toLong())
+                        }
+                        cartItems = updatedCartItems
                     }
-                    cartItems = updatedCartItems
                 }
+            }
+        }
+
+        // Checkout bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .height(56.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Total: ₹$totalPrice",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.weight(1f)
+            )
+
+            Button(
+                onClick = { /* Checkout logic */ },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A0146)),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                Text("Checkout", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -127,96 +177,112 @@ fun CartItemView(
 
     Card(
         modifier = Modifier
-            .padding(8.dp)
-            .height(200.dp)
-            .clickable(
-                onClick = {
-                    GlobalNavigator.navHostController.navigate("ProductDetailPage/"+product.id.toString())
-                }
-            ),
-        elevation = CardDefaults.cardElevation(8.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .padding(vertical = 8.dp)
+            .fillMaxWidth()
+            .clickable {
+                GlobalNavigator.navHostController
+                    .navigate("ProductDetailPage/${product.id}")
+            },
+        elevation = CardDefaults.cardElevation(4.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Product Image
             val imageBytes = decodeBase64(product.imageData.toString())
             val bitmap = remember(imageBytes) {
-                val options = BitmapFactory.Options().apply {
-                    inSampleSize = 2
-                }
-                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size,options)
+                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
             }
-
             AsyncImage(
                 model = bitmap,
                 contentDescription = product.title,
                 modifier = Modifier
-                    .width(100.dp)
-                    .fillMaxHeight()
+                    .size(90.dp)
+                    .padding(end = 12.dp)
             )
 
-            Column(modifier = Modifier.padding(start = 12.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                // Title
                 Text(
                     text = product.title ?: "",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = FontFamily.Serif
+                    maxLines = 2,
+                    color = Color.Black
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value =quan.value,
-                    onValueChange = { quan.value = it },
-                    label = { Text("Quantity") },
-                    textStyle = TextStyle(
-                        textAlign = TextAlign.Center,
-                        fontSize = 17.sp, fontWeight = FontWeight.SemiBold
-                    ),
-                    modifier = Modifier.height(60.dp).width(80.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row {
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Price Row
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "₹${product.actualPrice?.toInt()}",
-                        fontSize = 16.sp,
-                        textDecoration = TextDecoration.LineThrough
+                        fontSize = 13.sp,
+                        textDecoration = TextDecoration.LineThrough,
+                        color = Color.Gray
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "₹${product.price?.toInt()}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF3A0146)
                     )
                 }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row {
-                        FloatingActionButton(
-                            onClick = {
-                                val newQuantity = quan.value.toInt() - 1
-                                RemoveItemToCart(Modifier,product.id.toString(),context)
+                // Quantity Row
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    FloatingActionButton(
+                        onClick = {
+                            val newQuantity = quan.value.toInt() - 1
+                            if (newQuantity >= 0) {
+                                RemoveItemToCart(Modifier, product.id.toString(), context)
                                 onQuantityChange(product.id.toString(), newQuantity)
                                 quan.value = newQuantity.toString()
-                            },
-                            containerColor = Color(0xF0F1E57F),
-                        ) {
-                            Text("Remove", color = Color(0xFF3A0146))
-                        }
+                            }
+                        },
+                        containerColor = Color(0xFFF2E6F9),
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Text("-", color = Color(0xFF3A0146), fontSize = 18.sp)
+                    }
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = quan.value,
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
 
-                        FloatingActionButton(
-                            onClick = {
-                                val newQuantity = quan.value.toInt() + 1
-                                onQuantityChange(product.id.toString(), newQuantity)
-                                AddItemToCart(Modifier,product.id.toString(),context)
-                                quan.value = newQuantity.toString()
-                            },
-                            containerColor = Color(0xF0F1E57F)
-                        ) {
-                            Text("Add", color = Color(0xFF3A0146))
-                        }
+                    FloatingActionButton(
+                        onClick = {
+                            val newQuantity = quan.value.toInt() + 1
+                            onQuantityChange(product.id.toString(), newQuantity)
+                            AddItemToCart(Modifier, product.id.toString(), context)
+                            quan.value = newQuantity.toString()
+                        },
+                        containerColor = Color(0xFFF2E6F9),
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Text("+", color = Color(0xFF3A0146), fontSize = 18.sp)
                     }
                 }
+            }
         }
     }
 }
+
+
+
